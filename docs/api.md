@@ -41,4 +41,32 @@ WebSocket `/api/ws?surface=visitor`：
 
 访客只能操作自己的会话与图片。客服可看到公共等待队列摘要，接单后才能查看完整记录并回复。管理员可查看所有记录、改派会话、管理知识与员工；管理员发送人工消息仍需成为当前接待人。
 
-完整字段约定见 [CONTRACT.md](CONTRACT.md)，实际数据库字段见迁移，服务端实现是最终依据。
+## 请求字段
+
+| 接口 | 请求体 / 查询参数 |
+| --- | --- |
+| POST `/visitor` | `{name?:string}`，复用有效的访客身份 |
+| POST `/login` | `{email,password}` |
+| POST `/presence` | `{available:boolean}` |
+| GET `/conversations` | `scope=mine\|waiting\|history\|all`、`status`、`q`；服务端按身份过滤 |
+| POST `/conversations` | `{}`，返回当前未结束会话或新建会话 |
+| POST `/{id}/handoff` | `{reason?:string}`，仅用于该访客的会话 |
+| POST `/{id}/claim\|release\|close` | `{}` |
+| POST `/{id}/assign` | `{agent_id}`，仅管理员 |
+| POST `/{id}/feedback` | `{value:"solved"\|"unsolved"}` |
+| POST `/{id}/read` | `{seq:number}`，游标不能超过会话最新序号 |
+| POST `/staff` | `{name,email,password,role:"agent"}` |
+| PATCH `/staff/{id}` | `{name?,enabled?,password?}`，管理客服账号 |
+| GET `/ai-calls` | `limit`，返回最近的模型调用记录 |
+
+上表中 `/{id}` 的完整前缀为 `/conversations/{id}`。消息正文最多 4000 个 Unicode 字符，正文和图片至少提供一个。
+
+会话状态为 `ai`、`waiting`、`human`、`closed`。消息包含 `id`、`conversation_id`、`seq`、`sender_role`、`sender_id`、`client_id`、`body`、`image_id`、`citations`、`created_at`。引用包含实际片段编号、文档名称、正文及页码或段落。
+
+## 统计与健康
+
+`GET /stats` 返回 `conversations`、`waiting`、`human`、`closed`、`handoffs`、`ai_solved`、`solved`、`unsolved`、`avg_wait_seconds`、`avg_first_response_seconds`、`model_calls`、`total_tokens`。
+
+`handoffs` 按转接记录计数，退回队列后重新接待可产生新的周期。等待与首响均按对应转接周期计算。`ai_solved` 必须存在 AI 回复、访客明确反馈已解决且未转人工；未转人工本身不代表解决。
+
+`GET /health` 返回 `{ok,db,redis,instance_id}`。数据库失败时 HTTP 503；Redis 故障会单独报告，详见部署文档中的监控要求。

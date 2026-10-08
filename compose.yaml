@@ -1,10 +1,10 @@
-name: luma-support
+name: luma
 x-app: &app
   build: .
   env_file: .env
   environment: &app-env
-    DATABASE_URL: postgres://luma:${POSTGRES_PASSWORD:?Run scripts/setup.ps1}@postgres:5432/luma?sslmode=disable
-    REDIS_URL: redis://:${REDIS_PASSWORD:?Run scripts/setup.ps1}@redis:6379/0
+    DATABASE_URL: postgres://luma:${POSTGRES_PASSWORD:?Generate .env first}@postgres:5432/luma?sslmode=disable
+    REDIS_URL: redis://:${REDIS_PASSWORD:?Generate .env first}@redis:6379/0
     UPLOAD_DIR: /data
     STATIC_DIR: /app/frontend/dist
     APP_ADDR: :8090
@@ -26,7 +26,7 @@ services:
     environment:
       POSTGRES_USER: luma
       POSTGRES_DB: luma
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/setup.ps1}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Generate .env first}
     volumes: [postgres-data:/var/lib/postgresql/data]
     restart: unless-stopped
     healthcheck:
@@ -37,7 +37,7 @@ services:
   redis:
     image: redis:7.4-alpine
     environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?Run scripts/setup.ps1}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Generate .env first}
     command: [sh, -c, 'exec redis-server --requirepass "$$REDIS_PASSWORD" --appendonly yes']
     volumes: [redis-data:/data]
     restart: unless-stopped
@@ -70,7 +70,7 @@ services:
       init: { condition: service_completed_successfully }
   gateway:
     image: nginx:1.28-alpine
-    ports: ["127.0.0.1:8090:80"]
+    ports: ["127.0.0.1:${HTTP_PORT:-8090}:80"]
     volumes: [./deploy/nginx.conf:/etc/nginx/nginx.conf:ro]
     depends_on:
       app1: { condition: service_healthy }

@@ -9,3 +9,11 @@ frontend/dist/
 *.log
 *.tsbuildinfo
 coverage.out
+backups/
+*.dump
+*.tar.gz
+*.pem
+*.key
+*.pfx
+.DS_Store
+Thumbs.db
