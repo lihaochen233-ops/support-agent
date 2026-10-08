@@ -1,0 +1,6 @@
+# Run alongside compose.yaml to expose only loopback ports for integration tests.
+services:
+  postgres:
+    ports: ["127.0.0.1:55432:5432"]
+  redis:
+    ports: ["127.0.0.1:56379:6379"]

@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+.local/
+uploads/
+frontend/node_modules/
+frontend/dist/
+*.exe
+*.log
+*.tsbuildinfo
+coverage.out
